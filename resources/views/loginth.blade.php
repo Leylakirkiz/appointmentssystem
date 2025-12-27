@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title></title>
+    <title>Lecturer Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     
     <style>
@@ -14,18 +14,16 @@
             align-items: center;
             min-height: 100vh;
         }
-        .login-card { /* Class adını register yerine login olarak değiştirdik */
+        .login-card {
             max-width: 450px;
             width: 100%;
         }
         
-        /* LOGO ARKA PLAN STİLLERİ - Kayıt sayfasıyla aynı */
         .logo-bg {
             background-image: url("{{ asset('neuu.png')}}");
             background-size: contain;
             background-position: center center;
             background-repeat: no-repeat;
-             /* Varsayılan Kırmızı Renk */
             background-blend-mode: multiply;
             min-height: 150px;
             display: flex;
@@ -39,33 +37,22 @@
             color: white; 
             padding: 20px;
         }
-        /* inputEmail ID'sini veya form-control sınıfını hedefliyoruz */
-#inputEmail:focus,
-.form-control:focus {
-    /* 1. Varsayılan mavi çerçeve rengini kırmızıya çevir */
-    border-color: #ff0000; /* Kırmızı renk kodu */
 
-    /* 2. Tarayıcının varsayılan dış halkasını (outline) kaldır (Genellikle Bootstrap bunu yapıyor) */
-    outline: 0;
+        #inputEmail:focus,
+        .form-control:focus {
+            border-color: #ff0000; 
+            outline: 0;
+            box-shadow: 0 0 0 0.25rem rgba(255, 0, 0, 0.25); 
+        }
 
-    /* 3. Bootstrap'in varsayılan mavi box-shadow gölgesini kırmızıya çevir */
-    /* Bu, o belirgin mavi parlamayı oluşturan kısımdır. */
-    box-shadow: 0 0 0 0.25rem rgba(255, 0, 0, 0.25); /* Kırmızı, %25 şeffaflıkta gölge */
-    
-    /* Veya daha koyu bir kırmızı (tercihe göre) */
-    /* box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);  */
-}
-/* Ana metin rengi ve odak rengi */
-.card-footer a {
-    color: red; 
-    /* color: #dc3545;  Bootstrap'in "danger" kırmızısını tercih edebilirsiniz. */
-}
+        .card-footer a {
+            color: red; 
+        }
 
-/* Fare üzerine gelme (Hover) rengi */
-.card-footer a:hover {
-    color: #cc0000; /* Koyu kırmızı */
-    text-decoration: none; /* Üzerine gelince alt çizgiyi kaldırmak isterseniz */
-}
+        .card-footer a:hover {
+            color: #cc0000; 
+            text-decoration: none;
+        }
     </style>
 </head>
 <body>
@@ -73,26 +60,26 @@
 <div class="login-card">
     <div class="card shadow-lg border-0 rounded-lg">
         
-        {{-- BAŞLIK ALANI --}}
+        {{-- HEADER AREA --}}
         <div class="card-header text-white text-center logo-bg"> 
-            <h3 class="fw-bold my-1"></h3>
+            <h3 class="fw-bold my-1">Lecturer Portal</h3>
         </div>
         
         <div class="card-body p-4 p-md-5">
-            {{-- Form Başlangıcı: 'login' POST rotasına göndeririz --}}
-            <form method="POST" action="{{ route('login.submit') }}">
+            {{-- Form Action updated for Teacher Login --}}
+            <form method="POST" action="{{ route('loginth') }}">
                 @csrf 
                 
-                {{-- Global Hata Mesajı (Giriş Başarısızlığı için) --}}
-                @error('email')
+                {{-- Global Error Message --}}
+                @if ($errors->any())
                     <div class="alert alert-danger" role="alert">
-                        Please chack your email and password.
+                        Please check your email and password.
                     </div>
-                @enderror
+                @endif
                 
-                {{-- 1. E-posta Alanı --}}
+                {{-- 1. Email Field --}}
                 <div class="mb-3">
-                    <label for="inputEmail" class="form-label">E-mail</label>
+                    <label for="inputEmail" class="form-label">Lecturer E-mail</label>
                     <input class="form-control @error('email') is-invalid @enderror" 
                            id="inputEmail" 
                            type="email" 
@@ -100,11 +87,10 @@
                            value="{{ old('email') }}" 
                            required 
                            autofocus 
-                           placeholder="E-mail" />
-                    {{-- Burada sadece yukarıdaki genel hatayı kullanacağız, validation hataları için error kısmı kaldırıldı --}}
+                           placeholder="name@neu.edu.tr" />
                 </div>
 
-                {{-- 2. Şifre Alanı --}}
+                {{-- 2. Password Field --}}
                 <div class="mb-4">
                     <label for="inputPassword" class="form-label">Password</label>
                     <input class="form-control @error('email') is-invalid @enderror" 
@@ -115,25 +101,24 @@
                            placeholder="Password" />
                 </div>
                 
-                {{-- Beni Hatırla (Opsiyonel) --}}
+                {{-- Remember Me --}}
                 <div class="form-check mb-3">
                     <input class="form-check-input" id="remember_me" type="checkbox" name="remember">
-                    <label class="form-check-label" for="remember_me">Remember</label>
+                    <label class="form-check-label" for="remember_me">Remember Me</label>
                 </div>
 
-                {{-- Giriş Yap Butonu --}}
+                {{-- Login Button --}}
                 <div class="d-grid gap-2">
                     <button type="submit" class="btn btn-danger btn-lg">Login</button>
                 </div>
             </form>
-            {{-- Form Sonu --}}
 
         </div>
         
         <div class="card-footer text-center py-3">
             <div class="small">
-                {{-- Kayıt olma rotasına yönlendirme --}}
-                <a href="{{ route('registerview')  }}">Sign up.</a>
+                {{-- Link to Teacher Register --}}
+                <a href="{{ route('registerviewth') }}">Don't have an account? Sign up.</a>
             </div>
         </div>
     </div>
