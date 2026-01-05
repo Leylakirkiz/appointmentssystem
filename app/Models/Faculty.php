@@ -8,12 +8,12 @@ class Faculty extends Model
 {
     protected $fillable = ['name'];
 
-    // Fakültenin hocaları
+    // Teachers
     public function teachers() {
         return $this->hasMany(Teacher::class);
     }
 
-    // Fakültenin öğrencileri (Yeni eklenen kısım)
+    // Students
     public function users() {
         return $this->hasMany(User::class, 'faculty_id');
     }

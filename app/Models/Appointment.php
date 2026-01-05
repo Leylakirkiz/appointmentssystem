@@ -9,7 +9,7 @@ class Appointment extends Model
 {
     use HasFactory;
 
-    // Mass assignment (toplu atama) izni verilen sütunlar
+    
     protected $fillable = [
         'student_id',
         'teacher_id',
@@ -17,14 +17,14 @@ class Appointment extends Model
         'time_slot',
         'appointment_date',
         'status',
-        'message',
+        
         'student_note',
         'is_read_student',
         'is_read_teacher',
         'expires_at'
     ];
 
-    // İlişkileri de buraya ekleyelim (Blade dosyalarında hata almamak için)
+    // Relationships
     public function student()
     {
         return $this->belongsTo(User::class, 'student_id');

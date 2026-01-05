@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use HasFactory, Notifiable;
+
 use App\Models\Faculty;
 
 class Teacher extends Authenticatable
@@ -24,7 +24,7 @@ class Teacher extends Authenticatable
         'remember_token',
     ];
 
-    // İlişki: Bir Hoca bir fakülteye bağlıdır
+    // Teacher-Faculty relationship
     public function faculty(): BelongsTo
     {
         return $this->belongsTo(Faculty::class);

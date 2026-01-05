@@ -1,27 +1,22 @@
 @extends('layout')
 
+@section('title', 'Explore Faculties')
+
 @section('content')
 <style>
     :root {
-        --primary-red: #e63946;
+        --primary-blue: #1e3a8a; 
+        --accent-blue: #38bdf8;
         --soft-gray: #f8f9fa;
     }
 
-    body { 
-        background-color: #f4f7f6; 
-        margin: 0; 
-    }
-
-    /* --- SIDEBAR UYUMU İÇİN ANA ALAN --- */
+    /* Layout.blade içindeki main-content ile çakışmaması için wrapper sadeleştirildi */
     .faculty-page-wrapper {
-        margin-left: 280px; /* Sidebar genişliği kadar boşluk */
-        padding: 50px 40px;
+        padding: 20px 0;
         min-height: 100vh;
-        width: calc(100% - 280px); /* Ekranın kalan kısmını tam kapla */
-        box-sizing: border-box;
     }
 
-    /* Kartın Ana Yapısı */
+    /* Card Structure */
     .faculty-card {
         background: #ffffff;
         border: none;
@@ -30,9 +25,10 @@
         position: relative;
         overflow: hidden;
         z-index: 1;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
 
-    /* Arka Plan Süsü */
+    /* Background Decoration */
     .faculty-card::before {
         content: "";
         position: absolute;
@@ -40,35 +36,35 @@
         right: -50px;
         width: 100px;
         height: 100px;
-        background: rgba(230, 57, 70, 0.05);
+        background: rgba(30, 58, 138, 0.05);
         border-radius: 50%;
         transition: all 0.4s ease;
         z-index: -1;
     }
 
     .faculty-card:hover {
-        transform: translateY(-12px);
+        transform: translateY(-10px);
         box-shadow: 0 20px 40px rgba(0,0,0,0.08) !important;
     }
 
     .faculty-card:hover::before {
         width: 300px;
         height: 300px;
-        background: rgba(230, 57, 70, 0.1);
+        background: rgba(30, 58, 138, 0.1);
     }
 
-    /* İkon Alanı */
+    /* Icon Wrapper */
     .icon-wrapper {
         width: 70px;
         height: 70px;
-        background: linear-gradient(135deg, #e63946 0%, #b91c1c 100%);
+        background: linear-gradient(135deg, var(--primary-blue) 0%, #1e1b4b 100%);
         color: white;
         border-radius: 18px;
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 1.8rem;
-        box-shadow: 0 10px 20px rgba(230, 57, 70, 0.3);
+        box-shadow: 0 10px 20px rgba(30, 58, 138, 0.3);
         margin-bottom: 25px;
     }
 
@@ -110,30 +106,21 @@
     }
 
     .faculty-card:hover .arrow-btn {
-        background: var(--primary-red);
+        background: var(--accent-blue);
         transform: rotate(-45deg);
     }
 
     .faculty-link {
         text-decoration: none;
     }
-
-    /* Mobil Uyumluluk */
-    @media (max-width: 992px) {
-        .faculty-page-wrapper {
-            margin-left: 0;
-            width: 100%;
-            padding: 30px 15px;
-        }
-    }
 </style>
 
 <div class="faculty-page-wrapper">
     <div class="row mb-5 justify-content-center">
         <div class="col-md-10 text-center">
-            <span class="badge bg-danger mb-2 px-3 py-2 rounded-pill">NEU DEPARTMENTS</span>
+            <span class="badge bg-primary mb-2 px-3 py-2 rounded-pill">NEU DEPARTMENTS</span>
             <h1 class="display-5 fw-bold text-dark">Explore Our Faculties</h1>
-            <p class="lead text-muted">Pick a faculty to find the right lecturer for your academic success.</p>
+            <p class="lead text-muted">Select a faculty to find the available lecturers for your appointment.</p>
         </div>
     </div>
 
@@ -152,7 +139,7 @@
                             <div class="mt-auto d-flex align-items-center justify-content-between">
                                 <div class="info-badge">
                                     <i class="fas fa-chalkboard-teacher"></i>
-                                    {{ $faculty->teachers->count() }} Teachers
+                                    {{ $faculty->teachers->count() }} Lecturers
                                 </div>
                                 <div class="arrow-btn">
                                     <i class="fas fa-arrow-right"></i>

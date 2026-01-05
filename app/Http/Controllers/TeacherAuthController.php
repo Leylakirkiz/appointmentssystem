@@ -9,15 +9,13 @@ use App\Models\TeacherSchedule;
 use App\Models\Appointment;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
-use App\Mail\AppointmentStatusMail;
+
 
 class TeacherAuthController extends Controller
 {
     
-    /**
-     * Hoca Paneli Ana Sayfası (İstatistikler)
-     */
+    // Teacher Dashboard (Statistics)
+     
     public function dashboard()
     {
         $id = Auth::guard('teacher')->id();
@@ -39,68 +37,63 @@ class TeacherAuthController extends Controller
         return view('hometh', compact('stats', 'recentAppointments'));
     }
 
-    /**
-     * Randevuyu Tamamlandı Olarak İşaretle (QR Kodsuz Yeni Sistem)
-     */
-    public function completeAppointment($id) {
-        $appointment = Appointment::where('teacher_id', Auth::guard('teacher')->id())->findOrFail($id);
-        $appointment->update(['status' => 'completed']);
 
-        return redirect()->back()->with('success', 'Randevu başarıyla tamamlandı olarak işaretlendi.');
+
+    // Appointment Notifications and List
+     
+    public function notifications () {
+        $teacherId = Auth::guard('teacher')->id();
+
+        $notifications = Appointment::with(['student.faculty']) // Load student with faculty details
+            ->where('teacher_id', $teacherId)
+            ->latest()
+            ->get();
+        
+        Appointment::where('teacher_id', $teacherId)
+            ->where('is_read_teacher', false)
+            ->update(['is_read_teacher' => true]);    
+
+        return view('teacher_notifications', compact('notifications'));
     }
 
     /**
-     * Randevu Bildirimleri ve Listesi
-     */
-public function notifications() {
-    $teacherId = Auth::guard('teacher')->id();
-
-    $notifications = Appointment::with(['student.faculty']) // Öğrenciyle birlikte fakülteyi de yükle
-        ->where('teacher_id', $teacherId)
-        ->latest()
-        ->get();
-
-    return view('teacher_notifications', compact('notifications'));
-}
-
-    /**
-     * Randevu Onaylama veya Reddetme (Kapasite Kontrollü)
+     * Approve or Reject Appointment (with Capacity Control)
      */
     public function handleAppointment(Request $request, $id) 
-    {
-        $appointment = Appointment::with(['student', 'teacher'])->findOrFail($id);
-        
-        if ($request->status == 'approved') {
-            // Kontenjan Kontrolü: Aynı saatte onaylı kaç kişi var?
-            $approvedCount = Appointment::where('teacher_id', Auth::guard('teacher')->id())
-                ->where('day', $appointment->day)
-                ->where('time_slot', $appointment->time_slot)
-                ->where('status', 'approved')
-                ->count();
+{
+    // Fetch the appointment with related data
+    $appointment = Appointment::with(['student', 'teacher'])->findOrFail($id);
+    
+    if ($request->status == 'approved') {
+        // Capacity Check: How many approved appointments exist for this specific slot?
+        $approvedCount = Appointment::where('teacher_id', Auth::guard('teacher')->id())
+            ->where('day', $appointment->day)
+            ->where('time_slot', $appointment->time_slot)
+            ->where('status', 'approved')
+            ->count();
 
-            if ($approvedCount >= 4) {
-                return back()->with('error', 'Bu saat dilimi için zaten 4 onaylı randevunuz var. Kapasite dolmuştur.');
-            }
+        // If capacity (4) is reached, prevent further approvals
+        if ($approvedCount >= 4) {
+            return back()->with('error', 'Capacity full: You already have 4 approved appointments for this time slot.');
         }
-
-        $appointment->update([
-            'status' => $request->status,
-            'is_read_student' => false 
-        ]);
-
-        // Bilgilendirme Maili
-        try {
-            Mail::to($appointment->student->email)->send(new AppointmentStatusMail($appointment));
-            $mailStatus = " ve öğrenciye mail gönderildi.";
-        } catch (\Exception $e) {
-            $mailStatus = " (Mail gönderilemedi).";
-        }
-
-        $msg = $request->status == 'approved' ? 'Randevuyu onayladınız' : 'Randevuyu reddettiniz';
-        return back()->with('success', $msg . $mailStatus);
     }
 
-    // --- PROGRAM YÖNETİMİ ---
+    // Update database record and set the notification flag for the student dashboard
+    $appointment->update([
+        'status' => $request->status,
+        'is_read_student' => false 
+    ]);
+
+    // Prepare success message based on the action taken
+    $msg = $request->status == 'approved' ? 'Appointment has been approved.' : 'Appointment has been rejected.';
+    
+    return back()->with('success', $msg);
+}
+
+    // --- SCHEDULE MANAGEMENT ---
+
+    // Show Weekly Schedule
+     
     public function showScheduleOnly() {
         $teacher = Auth::guard('teacher')->user(); 
         if (!$teacher) return redirect()->route('loginviewth');
@@ -112,6 +105,8 @@ public function notifications() {
         return view('teacher_schedule', compact('teacher', 'days', 'slots', 'schedules'));
     }
 
+    // Update Schedule in Bulk
+     
     public function updateScheduleBulk(Request $request) {
         $teacherId = Auth::guard('teacher')->id();
         $schedules = $request->input('schedules');
@@ -127,46 +122,53 @@ public function notifications() {
         return response()->json(['success' => true]);
     }
 
-    // --- PROFİL VE AUTH ---
+    // --- PROFILE AND AUTHENTICATION ---
+
+    // Show Profile Edit Page
+     
     public function showProfileSettings() {
         $teacher = Auth::guard('teacher')->user();
         $faculties = Faculty::all();
         return view('teacher_profile', compact('teacher', 'faculties'));
     }
 
-public function updateProfile(Request $request)
-{
-    // Hocanın ID'sini oturumdan alıyoruz
-    $teacherId = auth()->guard('teacher')->id(); // Eğer hoca guard'ı kullanıyorsan
-    $teacher = Teacher::findOrFail($teacherId);
+    // Update Teacher Profile
+     
+    public function updateProfile(Request $request)
+    {
+        $teacherId = auth()->guard('teacher')->id();
+        $teacher = Teacher::findOrFail($teacherId);
 
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'office_location' => 'nullable|string|max:255',
-        'faculty_id' => 'required'
-    ]);
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'office_location' => 'nullable|string|max:255',
+            'faculty_id' => 'required'
+        ]);
 
-    // Veritabanına yazma işlemi
-    $teacher->update([
-        'name' => $request->name,
-        'office_location' => $request->office_location,
-        'faculty_id' => $request->faculty_id
-    ]);
+        $teacher->update([
+            'name' => $request->name,
+            'office_location' => $request->office_location,
+            'faculty_id' => $request->faculty_id
+        ]);
 
-    return back()->with('success', 'Ofis bilginiz ve profiliniz güncellendi.');
-}
+        return back()->with('success', 'Your office location and profile have been updated.');
+    }
 
     public function loginviewth() { return view('loginth'); }
 
+    // Teacher Login Logic
+     
     public function loginth(Request $request) {
         $credentials = $request->validate(['email' => 'required|email', 'password' => 'required']);
         if (Auth::guard('teacher')->attempt($credentials, $request->remember)) {
             $request->session()->regenerate();
             return redirect()->intended(route('hometh'));
         }
-        return back()->withErrors(['email' => 'Hatalı giriş bilgileri.']);
+        return back()->withErrors(['email' => 'Invalid login credentials.']);
     }
 
+    //Teacher Logout
+     
     public function logoutTeacher(Request $request) {
         Auth::guard('teacher')->logout();
         $request->session()->invalidate();
@@ -179,6 +181,8 @@ public function updateProfile(Request $request)
         return view('registerth', compact('faculties'));
     }
 
+    // Teacher Registration Logic
+     
     public function registerth(Request $request) {
         $request->validate([
             'name' => 'required|string|max:255',
@@ -188,24 +192,31 @@ public function updateProfile(Request $request)
         ]);
 
         $teacher = Teacher::create([
-            'name' => $request->name, 'email' => $request->email, 'faculty_id' => $request->faculty_id, 'password' => Hash::make($request->password),
+            'name' => $request->name, 
+            'email' => $request->email, 
+            'faculty_id' => $request->faculty_id, 
+            'password' => Hash::make($request->password),
         ]);
 
         Auth::guard('teacher')->login($teacher);
         return redirect()->route('hometh');
     }
-  public function showReservations()
-{
-    $teacherId = auth()->id();
 
-    // Sadece 'approved' (onaylı) olanları ve tarihe göre sıralı çekiyoruz
-    $reservations = Appointment::where('teacher_id', $teacherId)
-        ->where('status', 'approved')
-        ->with('student')
-        ->orderBy('appointment_date', 'asc') // En yakın tarih en üstte
-        ->get()
-        ->groupBy('appointment_date'); // ÖNEMLİ: Tarihe göre gruplar
+    
+      //List Approved Reservations
+     
+    public function showReservations()
+    {
+        $teacherId = auth()->id();
 
-    return view('reservationsth', compact('reservations'));
-}
+        // Fetch only 'approved' appointments grouped by date
+        $reservations = Appointment::where('teacher_id', $teacherId)
+            ->where('status', 'approved')
+            ->with('student')
+            ->orderBy('appointment_date', 'asc') // Nearest date first
+            ->get()
+            ->groupBy('appointment_date');
+
+        return view('reservationsth', compact('reservations'));
+    }
 }

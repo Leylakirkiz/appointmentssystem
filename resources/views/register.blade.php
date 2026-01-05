@@ -1,92 +1,126 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kayıt Ol</title>
+    <title>Student Registration | NEU Portal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
         :root {
-            --neu-red: #dc3545;
-            --neu-red-focus: #ff0000;
+            --primary-blue: #1e3a8a;
+            --hover-blue: #1e40af;
         }
 
         body {
-            background-color: #f0f2f5; 
+            background-color: #f1f5f9; 
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            font-family: 'Inter', sans-serif;
+            padding: 40px 0;
         }
+
         .register-card {
-            max-width: 450px;
+            max-width: 500px;
             width: 100%;
+        }
+
+        .card {
+            border-radius: 20px;
+            overflow: hidden;
+            border: none;
         }
         
         .logo-bg {
-            background-image: url("{{ asset('neuu.png') }}");
-            background-size: contain; 
-            background-position: center center;
-            background-repeat: no-repeat; 
-            background-blend-mode: multiply; 
-            min-height: 150px;
-            padding: 0; 
+            background-color: var(--primary-blue);
+            background-image: linear-gradient(rgba(30, 58, 138, 0.85), rgba(30, 58, 138, 0.85)), url("{{ asset('neuu.png') }}");
+            background-size: cover;
+            background-position: center;
+            min-height: 140px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
 
-        .form-control:focus,
-        .form-select:focus {
-            border-color: var(--neu-red-focus);
-            outline: 0;
-            box-shadow: 0 0 0 0.25rem rgba(255, 0, 0, 0.25);
+        .form-control, .form-select {
+            padding: 10px 15px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
         }
-        
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 0.25rem rgba(30, 58, 138, 0.15);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-blue);
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--hover-blue);
+            transform: translateY(-1px);
+        }
+
         .card-footer a {
-            color: var(--neu-red); 
+            color: var(--primary-blue);
             text-decoration: none;
+            font-weight: 600;
         }
-        .card-footer a:hover {
-            color: #cc0000;
+
+        .portal-icon {
+            font-size: 2.5rem;
+            color: white;
+            margin-bottom: 5px;
         }
     </style>
 </head>
 <body>
     
-<div class="register-card">
-    <div class="card shadow-lg border-0 rounded-lg">
+<div class="register-card px-3">
+    <div class="card shadow-lg">
         
-        <div class="card-header text-white text-center logo-bg"> 
-            <h3 class="fw-bold my-1"></h3>
+        <div class="card-header text-white text-center logo-bg border-0"> 
+            
         </div>
         
-        <div class="card-body p-4 p-md-5">
+        <div class="card-body p-4">
             <form method="POST" action="{{ route('register') }}">
                 @csrf 
                 
-                {{-- 1. AD SOYAD --}}
+                {{-- Full Name --}}
                 <div class="mb-3">
-                    <label for="inputName" class="form-label">Ad Soyad</label>
-                    <input class="form-control @error('name') is-invalid @enderror" id="inputName" type="text" name="name" value="{{ old('name') }}" required autofocus placeholder="Ad Soyad" />
+                    <label for="inputName" class="form-label fw-semibold">Full Name</label>
+                    <input class="form-control @error('name') is-invalid @enderror" id="inputName" type="text" name="name" value="{{ old('name') }}" required autofocus placeholder="John Doe" />
                     @error('name')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback small">{{ $message }}</div>
                     @enderror
                 </div>
                 
-                {{-- 2. E-POSTA --}}
+                {{-- Email --}}
                 <div class="mb-3">
-                    <label for="inputEmail" class="form-label">E-posta</label>
-                    <input class="form-control @error('email') is-invalid @enderror" id="inputEmail" type="email" name="email" value="{{ old('email') }}" required placeholder="email@std.neu.edu.tr" />
+                    <label for="inputEmail" class="form-label fw-semibold">Institutional E-mail</label>
+                    <input class="form-control @error('email') is-invalid @enderror" id="inputEmail" type="email" name="email" value="{{ old('email') }}" required placeholder="student@std.neu.edu.tr" />
                     @error('email')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback small">{{ $message }}</div>
                     @enderror
                 </div>
 
-                {{-- 3. FAKÜLTE SEÇİMİ --}}
+                {{-- Faculty Selection --}}
                 <div class="mb-3">
-                    <label for="inputFaculty" class="form-label">Faculty Selection</label>
+                    <label for="inputFaculty" class="form-label fw-semibold">Faculty</label>
                     <select class="form-select @error('faculty') is-invalid @enderror" id="inputFaculty" name="faculty" required>
                         <option value="">Please select your faculty...</option>
-                        
                         <option value="Atatürk Faculty of Education" {{ old('faculty') == 'Atatürk Faculty of Education' ? 'selected' : '' }}>Atatürk Faculty of Education</option>
                         <option value="Faculty of Dentistry" {{ old('faculty') == 'Faculty of Dentistry' ? 'selected' : '' }}>Faculty of Dentistry</option>
                         <option value="Faculty of Pharmacy" {{ old('faculty') == 'Faculty of Pharmacy' ? 'selected' : '' }}>Faculty of Pharmacy</option>
@@ -109,39 +143,43 @@
                         <option value="Faculty of Agriculture" {{ old('faculty') == 'Faculty of Agriculture' ? 'selected' : '' }}>Faculty of Agriculture</option>
                     </select>
                     @error('faculty')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback small">{{ $message }}</div>
                     @enderror
                 </div>
 
-                {{-- 4. ŞİFRE --}}
+                {{-- Password --}}
                 <div class="mb-3">
-                    <label for="inputPassword" class="form-label">Şifre</label>
-                    <input class="form-control @error('password') is-invalid @enderror" id="inputPassword" type="password" name="password" required autocomplete="new-password" placeholder="En az 8 karakter" />
+                    <label for="inputPassword" class="form-label fw-semibold">Password</label>
+                    <input class="form-control @error('password') is-invalid @enderror" id="inputPassword" type="password" name="password" required placeholder="At least 8 characters" />
                     @error('password')
-                        <div class="invalid-feedback">{{ $message }}</div>
+                        <div class="invalid-feedback small">{{ $message }}</div>
                     @enderror
                 </div>
                 
-                {{-- 5. ŞİFRE ONAYI --}}
+                {{-- Password Confirmation --}}
                 <div class="mb-4">
-                    <label for="inputPasswordConfirm" class="form-label">Şifreyi Onayla</label>
-                    <input class="form-control" id="inputPasswordConfirm" type="password" name="password_confirmation" required placeholder="Şifreyi Tekrarla" />
+                    <label for="inputPasswordConfirm" class="form-label fw-semibold">Confirm Password</label>
+                    <input class="form-control" id="inputPasswordConfirm" type="password" name="password_confirmation" required placeholder="Repeat password" />
                 </div>
 
                 <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-danger btn-lg">Hesap Oluştur</button>
+                    <button type="submit" class="btn btn-primary btn-lg">Register Now</button>
                 </div>
             </form>
         </div>
         
-        <div class="card-footer text-center py-3">
-            <div class="small">
-                <a href="{{ route('login') }}">Zaten hesabınız var mı? Giriş Yap.</a>
+        <div class="card-footer text-center py-4">
+            <div class="small text-muted">
+                Already have an account? <a href="{{ route('login') }}">Sign In</a>
             </div>
         </div>
     </div>
+    <div class="text-center mt-4">
+        <a href="{{ url('/neu') }}" class="text-decoration-none text-muted small">
+            <i class="fas fa-chevron-left me-1"></i> Back to Main Page
+        </a>
+    </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

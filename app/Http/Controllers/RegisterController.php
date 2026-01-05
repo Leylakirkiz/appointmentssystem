@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
@@ -8,27 +9,29 @@ use App\Models\Faculty;
 use Illuminate\Validation\Rules\Password;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use App\Models\Appointment;
+
 
 class RegisterController extends Controller
-
 {
-   public function profile()
-{
-    // Giriş yapmış kullanıcının verilerini alıyoruz
-    $student = Auth::user(); 
-    
-    // Tüm fakülteleri dropdown (seçim kutusu) için çekiyoruz
-    $faculties = \App\Models\Faculty::all();
-    
-    // Değişkeni 'student' adıyla view'a gönderiyoruz
-    return view('informations', [
-        'student' => $student, 
-        'faculties' => $faculties
-    ]);
-}
+    //Show the student profile information.
+     
+    public function profile()
+    {
+        // Get the authenticated user's data
+        $student = Auth::user(); 
+        
+        // Fetch all faculties for the dropdown selection
+        $faculties = Faculty::all();
+        
+        // Return view with student and faculty data
+        return view('informations', [
+            'student' => $student, 
+            'faculties' => $faculties
+        ]);
+    }
 
-    // Bilgileri günceller
+    // Update student profile information.
+     
     public function updateProfile(Request $request)
     {
         $student = auth()->user();
@@ -47,102 +50,78 @@ class RegisterController extends Controller
             'faculty_id' => $request->faculty_id
         ]);
 
-        return back()->with('success', 'Profil bilgileriniz başarıyla güncellendi.');
+        return back()->with('success', 'Profile information updated successfully.');
     }
-    public function show()
-    {
-        // Oturum açmış kullanıcının tüm veritabanı kaydını alır
-        $user = Auth::user(); 
-        
-        // Bu veriyi view'a gönderir
-        return view('informations', compact('user'));
+    
+    //Handle student registration.
+     
+    public function register(Request $request) {
+        $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'string', 'email', 'max:255', 'unique:users', 'regex:/^\d{8}@std\.neu\.edu\.tr$/i'],
+            'faculty' => ['required', 'string'],
+            'password' => ['required', 'string', 'confirmed', Password::min(8)->letters()->mixedCase()->symbols()->numbers()],
+        ]);
+
+        // Find the Faculty record to get the ID based on the selected name
+        $facultyRecord = Faculty::where('name', $request->faculty)->first();
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+            
+            // Fill both the string column and the relationship ID
+            'faculty' => $request->faculty, 
+            'faculty_id' => $facultyRecord ? $facultyRecord->id : null,
+        ]);
+
+        Auth::login($user);
+        return redirect('/home');
     }
-public function register(Request $request) {
-    $request->validate([
-        'name' => ['required', 'string', 'max:255'],
-        'email' => ['required', 'string', 'email', 'max:255', 'unique:users', 'regex:/^\d{8}@std\.neu\.edu\.tr$/i'],
-        'faculty' => ['required', 'string'], // Blade'deki select'in name'i "faculty"
-        'password' => ['required', 'string', 'confirmed', \Illuminate\Validation\Rules\Password::min(8)->letters()->mixedCase()->symbols()->numbers()],
-    ]);
 
-    // Formdan gelen metne göre veritabanındaki Faculty kaydını bul (ID'yi almak için)
-    $facultyRecord = \App\Models\Faculty::where('name', $request->faculty)->first();
-
-    $user = \App\Models\User::create([
-        'name' => $request->name,
-        'email' => $request->email,
-        'password' => \Illuminate\Support\Facades\Hash::make($request->password),
-        
-        // BURASI KRİTİK: İki sütunu da dolduruyoruz
-        'faculty' => $request->faculty, // Hata veren sütun (String: "Faculty of Engineering" vb.)
-        'faculty_id' => $facultyRecord ? $facultyRecord->id : null, // İlişki sütunu (ID: 3 vb.)
-    ]);
-
-    \Illuminate\Support\Facades\Auth::login($user);
-    return redirect('/home');
-}
-
+    // Show the registration view.
+     
     public function registerview(){
         return view('register');
     }
-public function logout(Request $request)
-{
-    Auth::logout();
-    $request->session()->invalidate();
-    $request->session()->regenerateToken();
-    return redirect()->route('login'); // loginview yerine rota ismini kullandık
-}
+
+    // Handle user logout.
+     
+    public function logout(Request $request)
+    {
+         Auth::guard()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect('/login');
+
+        
+    }
+
+    //Show the login view.
+     
     public function loginview(){
         return view('login');
     }
-   public function login(Request $request)
-{
-    $credentials = $request->validate([
-        'email' => ['required', 'email'],
-        'password' => ['required'],
-    ]);
 
-    // credentials verisini kontrol et
-    if (Auth::attempt($credentials, $request->boolean('remember'))) {
-        $request->session()->regenerate();
+    // Handle student login.
+     
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
 
-        // Rota ismi 'home' olan yere yönlendir
-        return redirect()->route('home'); 
+        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+            $request->session()->regenerate();
+
+            return redirect()->route('home'); 
+        }
+
+        // Return error if authentication fails
+        return back()->withErrors([
+            'email' => 'The provided credentials do not match our records.',
+        ])->onlyInput('email');
     }
-
-    // Eğer buraya düşüyorsa giriş başarısızdır, hata mesajını gösterir
-    return back()->withErrors([
-        'email' => 'Girdiğiniz bilgiler hatalı veya böyle bir kullanıcı yok.',
-    ])->onlyInput('email');
-}
-    public function notifications() {
-        \App\Models\Appointment::where('status', 'pending')
-        ->where('created_at', '<', now()->subDays(7))
-        ->update(['status' => 'expired']);
-    if (!Auth::check()) {
-        return redirect()->route('login');
-    }
-
-    $studentId = Auth::id();
-
-    // KURAL: 1 hafta dolunca (onaylanmamışsa) isteği "Zaman Aşımı" yap
-    Appointment::where('student_id', $studentId)
-        ->where('status', 'pending')
-        ->where('expires_at', '<', now())
-        ->update(['status' => 'expired']);
-
-    // Bildirimleri çek
-    $notifications = Appointment::with('teacher')
-        ->where('student_id', $studentId)
-        ->latest()
-        ->get();
-
-    // Sayfaya girince, okunmamış bildirimleri okundu say (isteğe bağlı)
-    Appointment::where('student_id', $studentId)
-        ->where('is_read_student', false)
-        ->update(['is_read_student' => true]);
-
-    return view('student_notifications', compact('notifications'));
-}
-   
 }

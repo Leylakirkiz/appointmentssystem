@@ -11,44 +11,36 @@ use Illuminate\Support\Facades\Auth;
 
 class FacultyController extends Controller
 {
-    // Randevuyu Onaylama Fonksiyonu
-public function approve($id)
-{
-    // 1. Randevuyu bul (Öğrencinin seçtiği tarih ve saat zaten içinde kayıtlı)
-    $appointment = Appointment::findOrFail($id);
 
-    // 2. Sadece durumunu 'approved' yapıyoruz, tarihe dokunmuyoruz
-    $appointment->update([
-        'status' => 'approved'
-    ]);
-
-    // 3. Hocayı onaylı randevuların olduğu sayfaya yönlendir
-    return redirect()->back()->with('success', 'Randevu başarıyla onaylandı.');
-}
     /**
-     * BİLDİRİMLER: Öğrencinin tüm başvuru süreçlerini gördüğü ekran.
-     * 1 haftalık süresi dolan bekleyen randevuları otomatik iptal eder.
+     * NOTIFICATIONS: Displays the status of the student's applications.
+     * Automatically expires pending appointments older than 7 days.
      */
     public function notifications() {
         $studentId = Auth::id();
 
-        // 7 günü geçen ve hala 'pending' (beklemede) olanları 'expired' yap
+        // Auto-expire pending appointments that are older than 7 days
         Appointment::where('student_id', $studentId)
             ->where('status', 'pending')
-            ->where('expires_at', '<', now())
+            ->where('created_at', '<', now()->subDays(7))
             ->update(['status' => 'expired']);
 
+        // Fetch notifications
         $notifications = Appointment::with('teacher')
             ->where('student_id', $studentId)
             ->latest()
             ->get();
 
+        // Mark unread notifications as read when the page is visited
+        Appointment::where('student_id', $studentId)
+            ->where('is_read_student', false)
+            ->update(['is_read_student' => true]);
+
         return view('student_notifications', compact('notifications'));
     }
 
-    /**
-     * RANDEVULARIM: Sadece hocanın onayladığı (approved) randevular listelenir.
-     */
+    // MY RESERVATIONS: Lists only the appointments approved by the teacher.
+     
     public function reservations() {
         $appointments = Appointment::with('teacher')
             ->where('student_id', Auth::id())
@@ -59,25 +51,22 @@ public function approve($id)
         return view('reservations', compact('appointments'));
     }
 
-    /**
-     * Fakülte listesini gösteren ana sayfa.
-     */
+    //Main page showing the list of faculties.
+     
     public function index() {
         $faculties = Faculty::with('teachers')->get();
         return view('createreservations', compact('faculties'));
     }
 
-    /**
-     * Seçilen fakültedeki hocaları listeler.
-     */
+    // Lists teachers within a selected faculty.
+     
     public function showTeachers($faculty_id) {
         $faculty = Faculty::with('teachers')->findOrFail($faculty_id);
         return view('faculty_teachers', compact('faculty'));
     }
 
-    /**
-     * Hocanın haftalık programını ve randevu alma tablosunu gösterir.
-     */
+    // Shows the teacher's weekly schedule and appointment booking table.
+     
     public function reserve($id) {
         $teacher = Teacher::with('faculty')->findOrFail($id);
         $faculty = $teacher->faculty;
@@ -93,51 +82,49 @@ public function approve($id)
         return view('faculty_reserve_detail', compact('teacher', 'faculty', 'days', 'slots', 'schedules'));
     }
 
-    /**
-     * RANDEVU KAYIT: Tüm kısıtlamaların (Kontenjan, Haftalık Limit) kontrol edildiği yer.
-     */
-public function storeAppointment(Request $request)
-{
-    $request->validate([
-        'teacher_id'       => 'required',
-        'appointment_date' => 'required|date|after_or_equal:today',
-        'time_slot'        => 'required',
-        'student_note'     => 'required'
-    ]);
+    // STORE APPOINTMENT: Handles appointment creation with validation.
+     
+    public function storeAppointment(Request $request)
+    {
+        $request->validate([
+            'teacher_id'       => 'required',
+            'appointment_date' => 'required|date|after_or_equal:today',
+            'time_slot'        => 'required',
+            'student_note'     => 'required'
+        ]);
 
-    // Seçilen tarihin hangi gün olduğunu bul (Database'deki 'day' kolonu için)
-    $dayName = \Carbon\Carbon::parse($request->appointment_date)->format('l');
+        // Find the day name of the selected date (for the 'day' column)
+        $dayName = \Carbon\Carbon::parse($request->appointment_date)->format('l');
 
-    Appointment::create([
-        'student_id'       => Auth::id(),
-        'teacher_id'       => $request->teacher_id,
-        'appointment_date' => $request->appointment_date, // Öğrencinin seçtiği net tarih
-        'day'              => $dayName,                   // Monday, Tuesday vb.
-        'time_slot'        => $request->time_slot,
-        'student_note'     => $request->student_note,
-        'status'           => 'pending'
-    ]);
+        Appointment::create([
+            'student_id'       => Auth::id(),
+            'teacher_id'       => $request->teacher_id,
+            'appointment_date' => $request->appointment_date, // Specific date selected by student
+            'day'              => $dayName,                   // Monday, Tuesday, etc.
+            'time_slot'        => $request->time_slot,
+            'student_note'     => $request->student_note,
+            'status'           => 'pending'
+        ]);
 
-    return back()->with('success', 'Randevu talebiniz ' . $request->appointment_date . ' tarihi için iletildi.');
-}
+        return back()->with('success', 'Your appointment request for ' . $request->appointment_date . ' has been submitted.');
+    }
 
-    /**
-     * İPTAL İŞLEMİ: Öğrencinin kendi talebini geri çekmesi.
-     */
+    //CANCEL OPERATION: Allows the student to withdraw their own request.
+     
     public function cancelAppointment($id) {
         $appointment = Appointment::where('id', $id)
             ->where('student_id', Auth::id())
             ->firstOrFail();
 
-        // Sadece bekleyen (pending) veya onaylanan (approved) randevular iptal edilebilir.
+        // Only pending or approved appointments can be cancelled.
         if (in_array($appointment->status, ['pending', 'approved'])) {
             $appointment->update([
                 'status' => 'cancelled',
-                'is_read_teacher' => false, // Hocanın iptalden haberi olması için
+                'is_read_teacher' => false, // Notify teacher of the cancellation
             ]);
-            return back()->with('success', 'Randevunuz başarıyla iptal edildi.');
+            return back()->with('success', 'Your appointment has been successfully cancelled.');
         }
 
-        return back()->with('error', 'Geçmiş veya reddedilmiş bir randevuyu iptal edemezsiniz.');
+        return back()->with('error', 'You cannot cancel a past or already rejected appointment.');
     }
 }

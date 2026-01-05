@@ -3,83 +3,115 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lecturer Login</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <title>Lecturer Login | NEU Portal</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
+        :root {
+            --primary-blue: #1e3a8a;
+            --hover-blue: #1e40af;
+        }
+
         body {
-            background-color: #f0f2f5; 
+            background-color: #f1f5f9; 
             display: flex;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
+            font-family: 'Inter', sans-serif;
         }
+
         .login-card {
             max-width: 450px;
             width: 100%;
         }
+
+        .card {
+            border-radius: 20px;
+            overflow: hidden;
+        }
         
         .logo-bg {
-            background-image: url("{{ asset('neuu.png')}}");
-            background-size: contain;
-            background-position: center center;
-            background-repeat: no-repeat;
-            background-blend-mode: multiply;
-            min-height: 150px;
+            background-color: var(--primary-blue);
+            background-image: linear-gradient(rgba(30, 58, 138, 0.9), rgba(30, 58, 138, 0.9)), url("{{ asset('neuu.png')}}");
+            background-size: cover;
+            background-position: center;
+            min-height: 160px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            padding: 0; 
         }
 
-        .logo-bg h3 {
-            color: white; 
-            padding: 20px;
+        .form-control {
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
         }
 
-        #inputEmail:focus,
         .form-control:focus {
-            border-color: #ff0000; 
-            outline: 0;
-            box-shadow: 0 0 0 0.25rem rgba(255, 0, 0, 0.25); 
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 0.25rem rgba(30, 58, 138, 0.15);
+        }
+
+        .btn-primary {
+            background-color: var(--primary-blue);
+            border: none;
+            padding: 12px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--hover-blue);
+            transform: translateY(-1px);
+        }
+
+        .card-footer {
+            background-color: #f8fafc;
+            border-top: 1px solid #f1f5f9;
         }
 
         .card-footer a {
-            color: red; 
+            color: var(--primary-blue);
+            text-decoration: none;
+            font-weight: 600;
         }
 
         .card-footer a:hover {
-            color: #cc0000; 
-            text-decoration: none;
+            text-decoration: underline;
+        }
+
+        .portal-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: rgba(255,255,255,0.9);
         }
     </style>
 </head>
 <body>
     
 <div class="login-card">
-    <div class="card shadow-lg border-0 rounded-lg">
+    <div class="card shadow-lg border-0">
         
-        {{-- HEADER AREA --}}
         <div class="card-header text-white text-center logo-bg"> 
-            <h3 class="fw-bold my-1">Lecturer Portal</h3>
+            
         </div>
         
         <div class="card-body p-4 p-md-5">
-            {{-- Form Action updated for Teacher Login --}}
             <form method="POST" action="{{ route('loginth') }}">
                 @csrf 
                 
-                {{-- Global Error Message --}}
                 @if ($errors->any())
-                    <div class="alert alert-danger" role="alert">
-                        Please check your email and password.
+                    <div class="alert alert-danger border-0 small" role="alert">
+                        <i class="fas fa-exclamation-circle me-2"></i> Invalid email or password.
                     </div>
                 @endif
                 
-                {{-- 1. Email Field --}}
                 <div class="mb-3">
-                    <label for="inputEmail" class="form-label">Lecturer E-mail</label>
+                    <label for="inputEmail" class="form-label fw-semibold">E-mail Address</label>
                     <input class="form-control @error('email') is-invalid @enderror" 
                            id="inputEmail" 
                            type="email" 
@@ -90,40 +122,38 @@
                            placeholder="name@neu.edu.tr" />
                 </div>
 
-                {{-- 2. Password Field --}}
                 <div class="mb-4">
-                    <label for="inputPassword" class="form-label">Password</label>
-                    <input class="form-control @error('email') is-invalid @enderror" 
+                    <label for="inputPassword" class="form-label fw-semibold">Password</label>
+                    <input class="form-control" 
                            id="inputPassword" 
                            type="password" 
                            name="password" 
                            required 
-                           placeholder="Password" />
+                           placeholder="••••••••" />
                 </div>
                 
-                {{-- Remember Me --}}
-                <div class="form-check mb-3">
-                    <input class="form-check-input" id="remember_me" type="checkbox" name="remember">
-                    <label class="form-check-label" for="remember_me">Remember Me</label>
-                </div>
+                
 
-                {{-- Login Button --}}
                 <div class="d-grid gap-2">
-                    <button type="submit" class="btn btn-danger btn-lg">Login</button>
+                    <button type="submit" class="btn btn-primary btn-lg">
+                        Sign In <i class="fas fa-arrow-right ms-2"></i>
+                    </button>
                 </div>
             </form>
-
         </div>
         
-        <div class="card-footer text-center py-3">
-            <div class="small">
-                {{-- Link to Teacher Register --}}
-                <a href="{{ route('registerviewth') }}">Don't have an account? Sign up.</a>
+        <div class="card-footer text-center py-4">
+            <div class="small text-muted">
+                New to the system? <a href="{{ route('registerviewth') }}">Create an account</a>
             </div>
         </div>
     </div>
+    <div class="text-center mt-4">
+        <a href="{{ url('/neu') }}" class="text-decoration-none text-muted small">
+            <i class="fas fa-chevron-left me-1"></i> Back to Main Page
+        </a>
+    </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
 </body>
 </html>
